@@ -1,12 +1,23 @@
 /* 検索結果用メタ情報と、Googleが理解できるレース構造化データを管理する。 */
 (function(){
   const SITE_NAME = 'RACE CALENDAR';
+  const SITE_URL = 'https://racecalendar98.github.io/racecalendar/';
   const HOME_DESCRIPTION = 'F1、WEC、SUPER GT、SUPER FORMULA、Formula Eのレース日程、決勝開始時刻、サーキット、順位表を日本時間でまとめて確認できるモータースポーツカレンダーです。';
 
   function pageUrl(seriesId, round, season){
     const url = new URL(location.href);
     url.hash = '';
     url.search = '';
+    if(seriesId) url.searchParams.set('series', seriesId);
+    if(seriesId && season) url.searchParams.set('season', String(season));
+    if(seriesId && round !== undefined && round !== null && round !== '') url.searchParams.set('round', String(round));
+    return url;
+  }
+
+  /* canonicalと構造化データは、アクセス方法に左右されない公開URLへ固定する。 */
+  function publicPageUrl(seriesId, round, season){
+    const path = seriesId && Number(season) === 2027 ? '2027/' : '';
+    const url = new URL(path, SITE_URL);
     if(seriesId) url.searchParams.set('series', seriesId);
     if(seriesId && season) url.searchParams.set('season', String(season));
     if(seriesId && round !== undefined && round !== null && round !== '') url.searchParams.set('round', String(round));
@@ -75,7 +86,7 @@
   }
 
   function eventData(series, race, season){
-    const url = pageUrl(series.id, race.round, season).href;
+    const url = publicPageUrl(series.id, race.round, season).href;
     const data = {
       '@type': 'SportsEvent',
       '@id': `${url}#event`,
@@ -98,7 +109,10 @@
         name: series.name
       }
     };
-    if(race.trackImage) data.image = new URL(race.trackImage, location.href).href;
+    if(race.trackImage){
+      const assetBase = new URL(Number(season) === 2027 ? '2027/' : '', SITE_URL);
+      data.image = new URL(race.trackImage, assetBase).href;
+    }
     return data;
   }
 
@@ -129,12 +143,12 @@
       const date = race.dateLabel || fmtDateJP(parseDate(race.date));
       title = `${race.name} 日程・開始時刻 | ${series.name} ${seasonLabel(series, season)} | ${SITE_NAME}`;
       description = `${series.name} ${roundLabel(race)}「${race.name}」は${date}に${race.circuit}で開催。決勝開始時刻とタイムスケジュールを日本時間で確認できます。`;
-      canonical = pageUrl(series.id, race.round, season).href;
+      canonical = publicPageUrl(series.id, race.round, season).href;
       structuredData = {'@context':'https://schema.org', ...eventData(series, race, season)};
     }else if(series){
       title = `${series.name} ${seasonLabel(series, season)} 日程・順位表 | ${SITE_NAME}`;
       description = `${seasonLabel(series, season)}の${series.name}全戦日程、次戦の決勝開始時刻、開催サーキット、ドライバー・チーム順位表を日本時間で確認できます。`;
-      canonical = pageUrl(series.id, null, season).href;
+      canonical = publicPageUrl(series.id, null, season).href;
       const races = series.races.filter(item => {
         const year = parseDate(item.date).getFullYear();
         return series.id === 'formulae' ? (year === season || year === season - 1) : year === season;
@@ -148,7 +162,7 @@
             name:title,
             description,
             url:canonical,
-            isPartOf:{'@type':'WebSite', name:SITE_NAME, url:pageUrl().href}
+            isPartOf:{'@type':'WebSite', name:SITE_NAME, url:SITE_URL}
           },
           {
             '@type':'ItemList',
@@ -156,7 +170,7 @@
             itemListElement:races.map((item, index) => ({
               '@type':'ListItem',
               position:index + 1,
-              url:pageUrl(series.id, item.round, season).href,
+              url:publicPageUrl(series.id, item.round, season).href,
               item:eventData(series, item, season)
             }))
           }
@@ -165,7 +179,7 @@
     }else{
       title = `${SITE_NAME} — モータースポーツ観戦カレンダー`;
       description = HOME_DESCRIPTION;
-      canonical = pageUrl().href;
+      canonical = SITE_URL;
       structuredData = {
         '@context':'https://schema.org',
         '@type':'WebSite',
