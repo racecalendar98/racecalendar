@@ -1,0 +1,188 @@
+<!--
+  RACE CALENDAR — モータースポーツ観戦カレンダー
+  ================================================
+  ファイル構成（すべて同じフォルダに置いて index.html を開いてください。
+  サブフォルダは使っていません）:
+    index.html            … 画面の骨組み（このファイル）
+    styles.css            … 見た目（レイアウト・配色・レスポンシブ対応）
+    script.js              … 画面の動作（カレンダー描画・モーダル表示など）
+    series-f1.js            ┐
+    series-wec.js            │
+    series-supergt.js        │ シリーズごとのレースデータ（日程・
+    series-superformula.js   │ セッション・順位表）。script.js より
+    series-formulae.js      ┘ 集約される
+  中身は id="..." を付けた空の入れ物（div など）を用意しておき、
+  script.js がその中身を毎回作り直す「描画関数」方式になっています。
+
+  ◆ 車のシルエット／コース図を好きな画像に差し替えたい場合
+  各 series-◯◯.js の中で、以下のように「画像ファイルへのパス」を追加すると、
+  自動生成の線画の代わりに、その画像をシリーズのテーマカラーで
+  表示します。透明PNGを使うと、透明部分を保ったままきれいに表示されます。
+  画像は images フォルダに置き、スラッシュ（/）区切りで指定してください。
+    ・シリーズ全体の車シルエットを変える → シリーズの "carImage": "../images/任意のファイル名.png"
+      例）"id": "f1", "carImage": "../images/f1-car.png", ...
+    ・特定のレース1つのコース図を変える → そのレースの "trackImage": "../maps/任意のファイル名.png"
+      例）{ "round":1, "name":"...", "trackImage":"../maps/suzuka-map.png", ... }
+  透明PNG（背景が透明なシルエットや図）を使うと自然になじみます。
+-->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2027年 モータースポーツ日程 | RACE CALENDAR</title>
+<meta name="description" content="2027年のF1、WEC、SUPER GT、SUPER FORMULA、Formula Eの日程、決勝開始時刻、開催サーキットを日本時間で確認できます。">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#10141d">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="RACE CALENDAR">
+<meta property="og:title" content="2027年 モータースポーツ日程 | RACE CALENDAR">
+<meta property="og:description" content="2027年の主要モータースポーツの日程と開催サーキットを確認できます。">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="2027年 モータースポーツ日程 | RACE CALENDAR">
+<meta name="twitter:description" content="2027年の主要モータースポーツの日程と開催サーキットを確認できます。">
+<link rel="canonical" id="canonicalLink" href="./">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=20260815-seo">
+</head>
+<body>
+
+<header class="app-header">
+  <button class="menu-toggle" id="menuToggle" aria-label="メニューを開く">☰</button>
+  <a class="brand" id="homeButton" href="../index.html" aria-label="ホームへ戻る">
+    <span class="brand-mark"></span>
+    <span class="brand-text">RACE<br>CALENDAR</span>
+  </a>
+</header>
+
+<div class="app">
+  <!-- サイドバー：中身の <nav id="seriesNav"> は空のままにしておき、
+       JS の renderNav() がシリーズ一覧ボタンを流し込む -->
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-collapse" id="sidebarCollapse" aria-label="サイドバーを折りたたむ" aria-pressed="false">‹</button>
+    <div class="sidebar-label">シリーズを選択</div>
+    <nav class="series-nav" id="seriesNav"></nav>
+    <div class="sidebar-footer">
+      <div class="clock-label">現在時刻 (JST)</div>
+      <div class="clock" id="clock">--:--:--</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- ホーム：全シリーズを横断して、直近のレースを表示する -->
+    <section class="home-view" id="homeView">
+      <div class="home-heading">
+        <div>
+          <div class="home-eyebrow">RACE CALENDAR</div>
+          <h1>NEXT UP - 次のレース</h1>
+        </div>
+        <p>全シリーズの開催予定を、近い順に表示します。</p>
+      </div>
+      <div class="home-featured" id="homeFeatured"></div>
+      <section class="home-upcoming-section">
+        <div class="section-heading"><h2>まもなく開催</h2><span>UPCOMING RACES</span></div>
+        <div class="home-upcoming" id="homeUpcoming"></div>
+      </section>
+      <section class="seo-intro" aria-labelledby="seoIntroTitle">
+        <h2 id="seoIntroTitle">2027年のモータースポーツ日程</h2>
+        <p>F1、WEC、SUPER GT、SUPER FORMULA、Formula Eの決勝日、開催サーキット、シーズンスケジュールを掲載しています。</p>
+        <nav class="seo-series-links" aria-label="2027年シリーズ別レースカレンダー">
+          <a href="?season=2027&amp;series=f1">F1</a>
+          <a href="?season=2027&amp;series=wec">WEC</a>
+          <a href="?season=2027&amp;series=supergt">SUPER GT</a>
+          <a href="?season=2027&amp;series=superformula">SUPER FORMULA</a>
+          <a href="?season=2027&amp;series=formulae">Formula E</a>
+          <a href="../index.html?season=2026&amp;series=f1">2026年シーズン</a>
+        </nav>
+      </section>
+    </section>
+
+    <div class="series-view" id="seriesView" hidden>
+    <div class="series-toolbar"><label class="season-picker" for="seasonSelect"><span>シーズン</span><select id="seasonSelect" aria-label="シーズンを選択"></select></label></div>
+    <!-- ヒーロー：次のレース名・カウントダウン・背景の車シルエット。
+         中の id 付き要素は renderHero() が毎回書き換える -->
+    <section class="hero" id="hero">
+      <div class="hero-car" id="heroCar"></div>
+      <div class="hero-track" id="heroTrack" aria-hidden="true"></div>
+      <div class="hero-content">
+        <div class="hero-eyebrow">NEXT UP — 次のレース</div>
+        <h1 class="hero-title" id="heroRaceName">読み込み中...</h1>
+        <div class="hero-meta" id="heroMeta"></div>
+        <div class="lights" id="lights" aria-hidden="true">
+          <div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div>
+        </div>
+        <div class="countdown" id="countdown">
+          <div class="cd-block"><span id="cdDays">--</span><label>DAYS</label></div>
+          <div class="cd-block"><span id="cdHours">--</span><label>HOURS</label></div>
+          <div class="cd-block"><span id="cdMins">--</span><label>MINUTES</label></div>
+          <div class="cd-block"><span id="cdSecs">--</span><label>SECONDS</label></div>
+        </div>
+        <div class="hero-sessions" id="heroSessions" aria-label="タイムスケジュール"></div>
+      </div>
+    </section>
+
+    <!-- 月間カレンダー：日付マスは renderCalendar() が月替わりのたびに全部作り直す -->
+    <section class="calendar-section">
+      <div class="cal-header">
+        <button class="cal-nav-btn" id="prevMonth" aria-label="前の月">‹</button>
+        <h2 id="monthLabel">-</h2>
+        <button class="cal-nav-btn" id="nextMonth" aria-label="次の月">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </section>
+
+    <!-- シーズンスケジュール一覧：レースカードは renderList() が生成 -->
+    <section class="race-list-section">
+      <h2 id="listTitle">シーズンスケジュール</h2>
+      <div class="race-list" id="raceList"></div>
+    </section>
+
+    <!-- 順位表：renderStandings() がシリーズごとの順位データから生成 -->
+    <section class="standings-section">
+      <h2 id="standingsTitle">ランキング</h2>
+      <div class="standings-switch" role="group" aria-label="順位表の表示切り替え">
+        <button type="button" class="active" data-standings-mode="drivers">ドライバーズ</button>
+        <button type="button" data-standings-mode="teams">チーム</button>
+      </div>
+      <div class="standings-note" id="standingsNote"></div>
+      <div class="standings-table" id="standingsTable"></div>
+    </section>
+    </div>
+  </main>
+</div>
+
+<!-- レース詳細モーダル：普段は非表示（.openが付くと画面中央に表示される）。
+     openRaceModal() が呼ばれるとこの中身を書き換えて表示する -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalRaceName">
+    <button class="modal-close" id="modalClose" aria-label="閉じる">✕</button>
+    <div class="modal-header">
+      <div class="modal-track" id="modalTrack"></div>
+      <div class="modal-title">
+        <h3 id="modalRaceName">-</h3>
+        <div class="sub" id="modalSub">-</div>
+      </div>
+    </div>
+    <div class="modal-section-label">セッションスケジュール</div>
+    <div class="session-list" id="modalSessions"></div>
+  </div>
+</div>
+
+<!-- シリーズごとのデータファイル（レース日程・順位表など）。
+     ここに書かれた順番がサイドバーの並び順になる。
+     読み込み後、各ファイルが window.SERIES_DATA に自分のシリーズを追加していく。
+     script.js（画面の動作を作るメインのコード）は必ずこれらより後で読み込む -->
+<script src="series-f1.js?v=20260815-shared-assets"></script>
+<script src="series-wec.js?v=20260815-shared-assets"></script>
+<script src="series-supergt.js?v=20260815-shared-assets"></script>
+<script src="series-superformula.js?v=20260815-shared-assets"></script>
+<script src="series-formulae.js?v=20260815-shared-assets"></script>
+<script src="home.js?v=20260815-five-upcoming-races"></script>
+<script src="../seo.js?v=20260815-seo"></script>
+<script src="script.js?v=20260815-seo"></script>
+</body>
+</html>
