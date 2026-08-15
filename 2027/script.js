@@ -405,7 +405,7 @@ function renderHeroTrack(race){
 }
 
 /* ヒーローセクション全体を再描画する（シリーズ切替のたびに呼ばれる）。
-   ・次のレースが無ければ「シーズン終了」表示にする
+   ・次のレースが無ければ「シーズン終了」または日程の発表状況を表示する
    ・あれば、レース名・開催情報を表示し、1秒ごとに残り時間を
      更新するカウントダウン(tick)を開始する */
 function renderHero(){
@@ -416,8 +416,11 @@ function renderHero(){
   const metaEl = document.getElementById('heroMeta');
   const sessionsEl = document.getElementById('heroSessions');
   if(!race){
-    nameEl.textContent = 'シーズン終了';
-    metaEl.textContent = `${activeSeries.name} — 今シーズンの残りレースはありません`;
+    const scheduleStatus = activeSeries.scheduleStatus;
+    nameEl.textContent = scheduleStatus || 'シーズン終了';
+    metaEl.textContent = scheduleStatus
+      ? `${activeSeries.name} — 2027年シーズンのスケジュールは、公式発表後に掲載します`
+      : `${activeSeries.name} — 今シーズンの残りレースはありません`;
     sessionsEl.innerHTML = '';
     setLights(0);
     ['cdDays','cdHours','cdMins','cdSecs'].forEach(id=>document.getElementById(id).textContent='--');
@@ -500,7 +503,15 @@ function renderList(){
   document.getElementById('listTitle').textContent = `${activeSeries.name} シーズンスケジュール`;
   const list = document.getElementById('raceList');
   list.innerHTML = '';
-  activeSeries.races.filter(isRaceInSelectedSeason).forEach(r=>{
+  const races = activeSeries.races.filter(isRaceInSelectedSeason);
+  if(races.length === 0 && activeSeries.scheduleStatus){
+    const statusCard = document.createElement('div');
+    statusCard.className = 'schedule-status-card';
+    statusCard.innerHTML = `<strong>${activeSeries.scheduleStatus}</strong><span>2027年シーズンのスケジュールは、公式発表後に掲載します。</span>`;
+    list.appendChild(statusCard);
+    return;
+  }
+  races.forEach(r=>{
     const d = parseDate(r.date);
     const isPast = raceFinalStart(activeSeries, r, d) < liveNow();
     const card = document.createElement('a');

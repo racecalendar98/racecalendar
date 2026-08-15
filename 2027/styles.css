@@ -331,6 +331,14 @@
      （中身はJSのrenderList()が生成、クリック処理はopenRaceModal()） */
   .race-list-section h2{ font-size:20px; margin-bottom:18px; color:var(--text); }
   .race-list{ display:flex; flex-direction:column; gap:10px; margin-bottom:36px; }
+  .schedule-status-card{
+    min-height:150px; padding:28px; border:1px solid color-mix(in srgb, var(--accent) 42%, var(--line));
+    border-left:4px solid var(--accent); border-radius:var(--radius-m);
+    background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, var(--surface)), var(--surface));
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center;
+  }
+  .schedule-status-card strong{ color:var(--text); font-size:24px; }
+  .schedule-status-card span{ color:var(--text-dim); font-size:14px; }
   .race-card{
     background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--accent);
     border-radius:var(--radius-m); padding:14px 20px;
