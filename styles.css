@@ -433,13 +433,26 @@
     .hero-session:nth-of-type(even){ border-left:1px solid color-mix(in srgb, var(--text-dim) 62%, transparent); }
     .hero-track{ left:-120px; top:-92px; opacity:.11; transform:rotate(-13deg) scale(.70); }
     .home-featured-track{ left:-120px; top:-92px; opacity:.11; transform:rotate(-13deg) scale(.70); }
-    .upcoming-card{ grid-template-columns:1fr 52px auto; gap:6px 12px; }
-    .upcoming-when{ grid-column:1; grid-row:1; }
-    .upcoming-track{ grid-column:2; grid-row:1 / span 4; }
-    .upcoming-series{ grid-column:1; grid-row:2; }
-    .upcoming-card h3{ grid-column:1; grid-row:3; }
-    .upcoming-circuit{ grid-column:1; grid-row:4; }
-    .upcoming-card .race-link-btn{ grid-column:3; grid-row:1 / span 4; }
+    .home-upcoming{ gap:14px; }
+    .home-upcoming-section .section-heading{ align-items:flex-end; gap:10px; }
+    .home-upcoming-section .section-heading h2{ font-size:24px; }
+    .home-upcoming-section .section-heading span{ font-size:9px; text-align:right; }
+    .upcoming-card{
+      min-height:0; padding:20px;
+      grid-template-columns:minmax(0,1fr) 72px;
+      grid-template-rows:auto auto auto auto auto;
+      gap:8px 14px;
+    }
+    .upcoming-when{ grid-column:1; grid-row:1; gap:6px; }
+    .upcoming-days{ font-size:48px; }
+    .upcoming-date{ font-size:13px; }
+    .upcoming-track{ grid-column:2; grid-row:1 / span 2; align-self:center; }
+    .upcoming-track .track-icon-img,.upcoming-track svg{ width:64px !important; height:64px !important; }
+    .upcoming-series{ grid-column:1; grid-row:2; font-size:14px; }
+    .upcoming-card h3{ grid-column:1 / -1; grid-row:3; margin:6px 0 0; font-size:24px; line-height:1.2; }
+    .upcoming-circuit{ grid-column:1 / -1; grid-row:4; font-size:15px; line-height:1.55; }
+    .upcoming-card .race-link-btn{ grid-column:1 / -1; grid-row:5; width:100%; min-height:48px; margin-top:8px; font-size:15px; }
+    .upcoming-car{ right:-30px; bottom:38px; width:240px; opacity:.055; }
     .home-featured-count{ gap:12px; }
     .home-featured-count strong{ font-size:21px; }
   }
